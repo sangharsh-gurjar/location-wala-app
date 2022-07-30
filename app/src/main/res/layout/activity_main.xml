@@ -21,7 +21,7 @@
             android:marqueeRepeatLimit="marquee_forever"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Location"
+            android:text="LOCATION"
 
             />
     </LinearLayout>
@@ -38,7 +38,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="60dp"
-            android:text="Select Loation" />
+            android:text="Select Location" />
 
         <EditText
             android:id="@+id/editTextTextPersonName2"
