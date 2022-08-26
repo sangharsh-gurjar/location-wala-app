@@ -1,46 +1,46 @@
 package com.example.loactionwalaapp;
 
-import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-import androidx.fragment.app.FragmentActivity;
-
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
-import android.nfc.Tag;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
-import android.view.View;
-import android.view.Window;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
-import android.widget.Adapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.fragment.app.FragmentActivity;
+
+import com.example.loactionwalaapp.databinding.ActivityMapsBinding;
+import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptor;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.example.loactionwalaapp.databinding.ActivityMapsBinding;
 import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.libraries.places.api.Places;
+import com.google.android.libraries.places.api.model.Place;
+import com.google.android.libraries.places.api.net.PlacesClient;
+import com.google.android.libraries.places.widget.AutocompleteSupportFragment;
+import com.google.android.libraries.places.widget.listener.PlaceSelectionListener;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
@@ -54,7 +54,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private Boolean mLocationPermissionGranted = false;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1234;
     private static final float DEFAULT_ZOOM = 15f;
+    private AutocompleteSupportFragment autocompleteSupportFragment =null;
+    PlacesClient placesClient;
     Button search;
+    private String apikey ="AIzaSyCcTaKoUbGUn9oHTkjv122Cc4rpjQSoURo";
+
 
 
     // widgets
@@ -69,11 +73,34 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         binding = ActivityMapsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         mSearchText = (EditText) findViewById(R.id.input_search);
-        search=(Button)findViewById(R.id.ic_search);
 
+        //initialize sdk
+        Places.initialize(getApplicationContext(),apikey);
+        // new places client instance
+        placesClient=Places.createClient(this);
+        if(!Places.isInitialized()){
+            Places.initialize(getApplicationContext(),apikey);
+        }
+        placesClient=Places.createClient(MapsActivity.this);
+        autocompleteSupportFragment=(AutocompleteSupportFragment) getSupportFragmentManager().findFragmentById(R.id.autocomplete_fragment);
+        autocompleteSupportFragment.setPlaceFields(Arrays.asList(Place.Field.ID,Place.Field.LAT_LNG,Place.Field.NAME));
+
+
+        autocompleteSupportFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
+            @Override
+            public void onError(@NonNull Status status) {
+
+            }
+
+            @Override
+            public void onPlaceSelected(@NonNull Place place) {
+                LatLng latLng =place.getLatLng();
+                moveCamera(latLng,DEFAULT_ZOOM);
+                mMap.addMarker(new MarkerOptions().position(latLng).title(place.getAddress()));
+            }
+        });
 
         getLocationPermission();
-
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -86,6 +113,29 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mSearchText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                String apikey ="AIzaSyCcTaKoUbGUn9oHTkjv122Cc4rpjQSoURo";
+                if(!Places.isInitialized()){
+                    Places.initialize(getApplicationContext(),apikey);
+                }
+                placesClient=Places.createClient(MapsActivity.this);
+                autocompleteSupportFragment=(AutocompleteSupportFragment) getSupportFragmentManager().findFragmentById(R.id.autocomplete_fragment);
+                autocompleteSupportFragment.setPlaceFields(Arrays.asList(Place.Field.ID,Place.Field.LAT_LNG,Place.Field.NAME));
+
+
+                autocompleteSupportFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
+                    @Override
+                    public void onError(@NonNull Status status) {
+
+                    }
+
+                    @Override
+                    public void onPlaceSelected(@NonNull Place place) {
+                        LatLng latLng =place.getLatLng();
+                        moveCamera(latLng,DEFAULT_ZOOM);
+                        mMap.addMarker(new MarkerOptions().position(latLng).title(place.getAddress()));
+                    }
+                });
+
                 if (event.getAction() ==KeyEvent.KEYCODE_ENTER || actionId == EditorInfo.IME_ACTION_SEARCH
                         || actionId == EditorInfo.IME_ACTION_DONE
                         || event.getAction() == KeyEvent.ACTION_DOWN
@@ -95,12 +145,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     geoLocate();
 
                 }
-                search.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        geoLocate();
-                    }
-                });
+
 
                 Log.d(TAG, "outside onEditorAction");
                 return false;
@@ -146,7 +191,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        // Add a marker in Sydney and move the camera
+
         //GPSTracker cur=null;
         //Location C =cur.getLocation();
         init();
@@ -168,17 +213,20 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     return;
                 }
                 mMap.setMyLocationEnabled(true);
+
             }
 
 
         }
 
 
-        LatLng sydney = new LatLng(23.2599, 77.4126);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Bhopal"));
+
+
+        //LatLng sydney = new LatLng(23.2599, 77.4126);
+        //mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Bhopal"));
 
         // .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_current_location))
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+        //mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
     }
 
     private void hideSoftKeyboard() {

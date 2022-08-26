@@ -28,7 +28,7 @@
         -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyBtNgf3BA6X-9pWDyhRLcw_tDx_RLUvFU4" />
+            android:value="AIzaSyCcTaKoUbGUn9oHTkjv122Cc4rpjQSoURo" />
 
         <activity
             android:name=".MapsActivity"
@@ -48,6 +48,7 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"></uses-permission>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"></uses-permission>
     <uses-permission android:name="android.permission.ACCESS_LOCATION_EXTRA_COMMANDS"></uses-permission>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"></uses-permission>
     <uses-permission android:name="android.permission.INTERNET"></uses-permission>
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
 
