@@ -1,6 +1,9 @@
 package com.example.loactionwalaapp;
 
 import android.Manifest;
+import android.app.ActivityManager;
+import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
@@ -19,6 +22,7 @@ import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
+import androidx.room.Room;
 
 import com.example.loactionwalaapp.databinding.ActivityMapsBinding;
 import com.google.android.gms.common.api.Status;
@@ -56,6 +60,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private static final float DEFAULT_ZOOM = 15f;
     private AutocompleteSupportFragment autocompleteSupportFragment =null;
     PlacesClient placesClient;
+    Location currentLocationForDB;
     Button search;
     private String apikey ="AIzaSyCcTaKoUbGUn9oHTkjv122Cc4rpjQSoURo";
 
@@ -101,6 +106,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
 
         getLocationPermission();
+        startLocationService();
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -251,7 +257,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         if (task.isSuccessful()) {
                             Log.d(TAG, "got current Location");
                             Location currentLocation = (Location) task.getResult();
+                            currentLocationForDB = (Location) task.getResult();
                             moveCamera(new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude()), DEFAULT_ZOOM);
+                            new BgThread().start();
                         } else {
                             Log.d(TAG, " failed to get current Location");
                             //Toast.makeText(this,"failed to get location",Toast.LENGTH_SHORT).show();;
@@ -327,5 +335,58 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 }
             }
         }
+    }
+
+    private boolean isLocationServiceRunning(){
+        ActivityManager activityManager =
+                (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        if(activityManager!=null){
+            for(ActivityManager.RunningServiceInfo service :
+            activityManager.getRunningServices(Integer.MAX_VALUE)){
+                if(LocationService.class.getName().equals(service.service.getClassName())){
+                    if(service.foreground){
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+        return false;
+
+    }
+
+    private void startLocationService(){
+        if(!isLocationServiceRunning()){
+            Intent intent = new Intent(getApplicationContext(),LocationService.class);
+            intent.setAction(Constant.ACTION_START_LOACTION_SERVICE);
+            startService(intent);
+            Toast.makeText(this,"Location Service Started ",Toast.LENGTH_SHORT).show();
+        }
+    }
+
+
+    private void stopLocationService(){
+        if(isLocationServiceRunning()){
+            Intent intent = new Intent(getApplicationContext(),LocationService.class);
+            intent.setAction(Constant.ACTION_STOP_LOACTION_SERVICE);
+            startService(intent);
+            Toast.makeText(this,"Location Service Stopped ",Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void calculate(){
+
+    }
+
+    class BgThread extends Thread{
+        public void run(){
+            super.run();
+            AppDatabase db = Room.databaseBuilder(getApplicationContext(),
+                    AppDatabase.class, "database-name").build();
+            UserDao userDao = db.userDao();
+
+            userDao.insertLocation(new User(1,currentLocationForDB.getLatitude(),currentLocationForDB.getLongitude()));
+        }
+
     }
 }

@@ -47,8 +47,8 @@
             android:ems="10"
             android:gravity="center"
             android:layout_marginTop="60dp"
-            android:inputType="textPersonName"
-            android:text="SetRadius" />
+            android:inputType="number"
+            android:text="SetRadius (in meters)" />
     </LinearLayout>
 
 </LinearLayout>
